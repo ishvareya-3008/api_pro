@@ -22,7 +22,7 @@ const App = () => {
   const [unit, setUnit] = useState("c");
   const [error, setError] = useState("");
 
-  const API_KEY = "e17357e39d637ba45cfa7c65c1b59015";
+  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
 
   useEffect(() => {
     if (city.trim().length >= 3 && !weather) {
