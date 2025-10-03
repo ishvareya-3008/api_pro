@@ -29,8 +29,8 @@ const App = () => {
       const timer = setTimeout(() => fetchSuggestions(city), 500);
       return () => clearTimeout(timer);
     }
-    setSuggestion([]);
-  }, [city, weather]);
+    setSuggestion([]); 
+  }, [city, weather]);   
 
   const fetchSuggestions = async (query) => {
     try {
@@ -220,7 +220,7 @@ const App = () => {
               </div>
               
           ) }
-          { error && <p className="text-red-500 text-center mt-4">{ error}</p>}
+          { error && <p className="text-red-500 text-center mt-4">{ error}</p> }  
         </div>
       </div>
     </div>
