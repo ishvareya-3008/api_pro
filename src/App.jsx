@@ -36,30 +36,36 @@ const App = () => {
   }, [API_KEY]);
 
   useEffect(() => {
-    if (city.trim().length >= 3 && !weather) {
+    if (city.trim().length >= 3) {
       const timer = setTimeout(() => fetchSuggestions(city), 500);
       return () => clearTimeout(timer);
     }
+    setSuggestion([]); 
+  }, [city, fetchSuggestions]);   
+
+ const fetchWeatherData = async (URL, name = "") => {
+  setError("");
+  setWeather(null);
+
+  try {
+    // Add timeout for mobile networks
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    const response = await fetch(URL, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!response.ok)
+      throw new Error((await response.json()).message || "City not found");
+
+    const data = await response.json();
+    setWeather(data);
+    setCity(name || data.name);
     setSuggestion([]);
-  }, [city, weather, fetchSuggestions]);
-
-  const fetchWeatherData = async (URL, name = "") => {
-    setError("");
-    setWeather(null);
-
-    try {
-      const response = await fetch(URL);
-      if (!response.ok)
-        throw new Error((await response.json()).message || "City not found");
-
-      const data = await response.json();
-      setWeather(data);
-      setCity(name || data.name);
-      setSuggestion([]);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  } catch (err) {
+    setError(err.name === 'AbortError' ? 'Request timeout' : err.message);
+  }
+};
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -105,7 +111,7 @@ const App = () => {
               />
 
               {suggestion.length > 0 && (
-                <div className="absolute top-12 left-0 right-0 bg-gray-800 shadow-md rounded z-10">
+                <div className="absolute top-12 left-0 right-0 bg-gray-800/90 backdrop-blur-sm shadow-md rounded z-10">
                   {suggestion.map((s) => (
                     <button
                       type="button"
@@ -118,7 +124,7 @@ const App = () => {
                           }`
                         )
                       }
-                      className="block hover:bg-blue-700 bg-transparent px-4 py-2 text-sm text-left w-full transition-colors"
+                      className="block hover:bg-blue-700/50 bg-transparent px-4 py-2 text-sm text-left w-full transition-colors border-b border-white/10 last:border-b-0"
                     >
                       {s.name}, {s.country}
                       {s.state && `, ${s.state}`}
@@ -129,7 +135,7 @@ const App = () => {
 
               <button
                 type="submit"
-                className="bg-purple-700 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                className="bg-purple-700 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition-colors mt-2"
               >
                 Get Weather
               </button>
@@ -159,7 +165,7 @@ const App = () => {
               <img
                 src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
                 alt={weather.weather[0].description}
-                className="mx-auto my-4 animate-bounce"
+                className="mx-auto my-4 w-20 h-20 animate-bounce"
               />
               <p className="text-4xl">
                 {convertTemperature(weather.main.temp, unit)} &deg;
@@ -190,7 +196,7 @@ const App = () => {
                     "Visibility",
                     getVisibilityValue(weather.visibility),
                   ],
-                ].map(([ label, value]) => (
+                ].map(([Icon, label, value]) => (
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
@@ -203,7 +209,7 @@ const App = () => {
                 {[
                   [SunriseIcon, "Sunrise", weather.sys.sunrise],
                   [SunsetIcon, "Sunset", weather.sys.sunset],
-                ].map(([ label, time]) => (
+                ].map(([Icon, label, time]) => (
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
