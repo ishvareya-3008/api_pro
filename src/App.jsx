@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import WeatherBackground from "./components/WeatherBackground";
 import {
   convertTemperature,
@@ -22,26 +22,26 @@ const App = () => {
   const [unit, setUnit] = useState("c");
   const [error, setError] = useState("");
 
-  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY
+  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+
+  const fetchSuggestions = useCallback(async (query) => {
+    try {
+      const res = await fetch(
+        `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${API_KEY}`
+      );
+      res.ok ? setSuggestion(await res.json()) : setSuggestion([]);
+    } catch {
+      setSuggestion([]);
+    }
+  }, [API_KEY]);
 
   useEffect(() => {
     if (city.trim().length >= 3 && !weather) {
       const timer = setTimeout(() => fetchSuggestions(city), 500);
       return () => clearTimeout(timer);
     }
-    setSuggestion([]); 
-  }, [city, weather]);   
-
-  const fetchSuggestions = async (query) => {
-    try {
-      const res = await fetch(
-        `http://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${API_KEY}`
-      );
-      res.ok ? setSuggestion(await res.json()) : setSuggestion([]);
-    } catch {
-      setSuggestion([]);
-    }
-  };
+    setSuggestion([]);
+  }, [city, weather, fetchSuggestions]);
 
   const fetchWeatherData = async (URL, name = "") => {
     setError("");
@@ -190,7 +190,7 @@ const App = () => {
                     "Visibility",
                     getVisibilityValue(weather.visibility),
                   ],
-                ].map(([Icon, label, value]) => (
+                ].map(([ label, value]) => (
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
@@ -203,7 +203,7 @@ const App = () => {
                 {[
                   [SunriseIcon, "Sunrise", weather.sys.sunrise],
                   [SunsetIcon, "Sunset", weather.sys.sunset],
-                ].map(([Icon, label, time]) => (
+                ].map(([ label, time]) => (
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
@@ -215,12 +215,9 @@ const App = () => {
                     </p>
                   </div>
                 ))}
-                </div>
-              
               </div>
-              
-          ) }
-          { error && <p className="text-red-500 text-center mt-4">{ error}</p> }  
+            </div>
+          )}
         </div>
       </div>
     </div>
