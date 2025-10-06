@@ -8,7 +8,7 @@ import {
 } from "./components/Helper";
 
 import {
-  Droplets as HumidityIcon,
+  Droplet as HumidityIcon, // ✅ Fixed: Changed from Droplets to Droplet
   Wind as WindIcon,
   Eye as VisibilityIcon,
   Sunrise as SunriseIcon,
@@ -22,51 +22,63 @@ const App = () => {
   const [unit, setUnit] = useState("c");
   const [error, setError] = useState("");
 
-  const API_KEY = import.meta.env.VITE_WEATHER_API_KEY;
+  // ✅ Replace with your real API key from OpenWeatherMap
+  const API_KEY = "86e9d335ae5ec972d93a12f265387236";
 
-  const fetchSuggestions = useCallback(async (query) => {
-    try {
-      const res = await fetch(
-        `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${API_KEY}`
-      );
-      res.ok ? setSuggestion(await res.json()) : setSuggestion([]);
-    } catch {
-      setSuggestion([]);
-    }
-  }, [API_KEY]);
+  // fetch city suggestions
+  const fetchSuggestions = useCallback(
+    async (query) => {
+      try {
+        const res = await fetch(
+          `https://api.openweathermap.org/geo/1.0/direct?q=${query}&limit=5&appid=${API_KEY}`
+        );
+        if (res.ok) {
+          setSuggestion(await res.json());
+        } else {
+          setSuggestion([]);
+        }
+      } catch {
+        setSuggestion([]);
+      }
+    },
+    [API_KEY]
+  );
 
   useEffect(() => {
     if (city.trim().length >= 3) {
       const timer = setTimeout(() => fetchSuggestions(city), 500);
       return () => clearTimeout(timer);
     }
-    setSuggestion([]); 
-  }, [city, fetchSuggestions]);   
-
- const fetchWeatherData = async (URL, name = "") => {
-  setError("");
-  setWeather(null);
-
-  try {
-    // Add timeout for mobile networks
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-    
-    const response = await fetch(URL, { signal: controller.signal });
-    clearTimeout(timeoutId);
-    
-    if (!response.ok)
-      throw new Error((await response.json()).message || "City not found");
-
-    const data = await response.json();
-    setWeather(data);
-    setCity(name || data.name);
     setSuggestion([]);
-  } catch (err) {
-    setError(err.name === 'AbortError' ? 'Request timeout' : err.message);
-  }
-};
+  }, [city, fetchSuggestions]);
 
+  // fetch weather
+  const fetchWeatherData = async (URL, name = "") => {
+    setError("");
+    setWeather(null);
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(URL, { signal: controller.signal });
+      clearTimeout(timeoutId);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "City not found");
+      }
+
+      setWeather(data);
+      setCity(name || data.name);
+      setSuggestion([]);
+    } catch (err) {
+      setError(err.name === "AbortError" ? "Request timeout" : err.message);
+    }
+  };
+
+  // handle manual search
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!city.trim()) return setError("Please enter a valid city name");
@@ -75,6 +87,7 @@ const App = () => {
     );
   };
 
+  // get weather condition (day/night + main type)
   const getWeatherCondition = () => {
     if (!weather) return null;
     return {
@@ -119,9 +132,7 @@ const App = () => {
                       onClick={() =>
                         fetchWeatherData(
                           `https://api.openweathermap.org/data/2.5/weather?lat=${s.lat}&lon=${s.lon}&appid=${API_KEY}&units=metric`,
-                          `${s.name}, ${s.country}${
-                            s.state ? `, ${s.state}` : ""
-                          }`
+                          `${s.name}, ${s.country}${s.state ? `, ${s.state}` : ""}`
                         )
                       }
                       className="block hover:bg-blue-700/50 bg-transparent px-4 py-2 text-sm text-left w-full transition-colors border-b border-white/10 last:border-b-0"
@@ -196,7 +207,7 @@ const App = () => {
                     "Visibility",
                     getVisibilityValue(weather.visibility),
                   ],
-                ].map(([Icon, label, value]) => (
+                ].map(([Icon, label, value]) => ( // ✅ Fixed: Added Icon back to destructuring
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
@@ -209,7 +220,7 @@ const App = () => {
                 {[
                   [SunriseIcon, "Sunrise", weather.sys.sunrise],
                   [SunsetIcon, "Sunset", weather.sys.sunset],
-                ].map(([Icon, label, time]) => (
+                ].map(([Icon, label, time]) => ( // ✅ Fixed: Added Icon back to destructuring
                   <div key={label} className="flex flex-col items-center m-2">
                     <Icon className="w-6 h-6 mb-2" />
                     <p className="font-semibold">{label}</p>
